@@ -1,2 +1,2 @@
-# ConsultasDeSeleccionSQL
- Consultas de seleccion SQL
+# Consultas De Seleccion SQL
+	Consultas Where, Case, Join.
