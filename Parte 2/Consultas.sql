@@ -68,5 +68,64 @@ go
 --el nombre del proyecto, la descripción del proyecto y el costo estimado del
 --proyecto de todos aquellos proyectos que hayan finalizado.
 select M.Nombre, M.CostoEstimado, P.Nombre, P.Descripcion, P.CostoEstimado
-from Modulos M
+from Modulos as M
 full join Proyectos P on P.ID = M.IDProyecto
+where M.FechaFin is not null
+
+go
+
+--Listar los nombres de los módulos y el nombre del proyecto de aquellos
+--módulos cuyo tiempo estimado de realización sea de más de 100 horas.
+select M.Nombre, P.Nombre from Modulos M
+inner join Proyectos P on P.ID = M.IDProyecto
+where M.TiempoEstimado>100
+
+go
+
+--Listar nombres de módulos, nombre del proyecto, descripción y tiempo
+--estimado de aquellos módulos cuya fecha estimada de fin sea mayor a la
+--fecha real de fin y el costo estimado del proyecto sea mayor a cien mil.
+select M.Nombre, P.Nombre, P.Descripcion, M.TiempoEstimado
+from Modulos M
+inner join Proyectos p on p.ID = M.IDProyecto
+where M.FechaEstimadaFin > M.FechaFin and P.CostoEstimado > 100000
+
+go
+
+--Listar nombre de proyectos, sin repetir, que registren módulos que hayan
+--finalizado antes que el tiempo estimado.
+select distinct P.Nombre from Proyectos p
+Inner join Modulos M on M.IDProyecto = P.ID
+where M.FechaEstimadaFin < M.FechaFin
+
+go
+
+--Listar nombre de ciudades, sin repetir, que no registren clientes pero sí
+--colaboradores.
+select distinct C.Nombre from Ciudades C
+left join Colaboradores CO on CO.IDCiudad = C.ID
+left join Clientes CL on CL.IDCiudad = C.ID 
+where CL.IDCiudad is null and CO.IDCiudad is not null
+
+go
+
+-- Listar el nombre del proyecto y nombre de módulos de aquellos módulos que
+-- contengan la palabra 'login' en su nombre o descripción.
+select P.Nombre, M.Nombre from Proyectos P
+inner join Modulos M on M.IDProyecto = P.ID
+where M.Nombre like '%login%' and M.Descripcion like '%Login%'
+
+go
+
+--Listar el nombre del proyecto y el nombre y apellido de todos los
+--colaboradores que hayan realizado algún tipo de tarea cuyo nombre contenga
+--'Programación' o 'Testing'. Ordenarlo por nombre de proyecto de manera
+--ascendente.
+select P.Nombre, C.Nombre, C.Apellido from Proyectos P
+inner join Modulos M on M.IDProyecto = P.ID
+inner join Tareas T on T.IDModulo = M.ID
+inner join Colaboraciones CO on CO.IDTarea = T.ID
+inner join Colaboradores C on C.ID = CO.IDColaborador
+inner join TiposTarea TI on T.IDTipo = TI.ID
+where TI.Nombre like '%Programacion%' or TI.Nombre like '%Testing%'
+order by P.ID asc
