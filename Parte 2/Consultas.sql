@@ -129,3 +129,44 @@ inner join Colaboradores C on C.ID = CO.IDColaborador
 inner join TiposTarea TI on T.IDTipo = TI.ID
 where TI.Nombre like '%Programacion%' or TI.Nombre like '%Testing%'
 order by P.ID asc
+
+--Listar nombres y apellidos de las tres colaboraciones de colaboradores
+--externos que más hayan demorado en realizar alguna tarea cuyo nombre de
+--tipo de tarea contenga 'Testing'.
+select top 3 C.Nombre + ' ' + C.Apellido as 'Nombre y Apellido' from Colaboraciones CO
+inner join Colaboradores C on CO.IDColaborador = C.ID
+inner join Tareas T on T.ID = CO.IDTarea
+inner join TiposTarea TT on T.IDTipo = TT.ID
+where C.Tipo = 'E' and TT.Nombre like '%Testing%'
+
+--Listar apellido, nombre y mail de los colaboradores argentinos que sean
+--internos y cuyo mail no contenga '.com'.
+select C.Nombre, C.Apellido, C.EMail from Colaboradores C
+inner join Ciudades CI on CI.ID = C.IDCiudad
+inner join Paises P on P.ID = CI.IDPais
+where C.Tipo = 'I' and C.EMail not like '%.com%' and P.Nombre = 'Argentina'
+
+--Listar nombre del proyecto, nombre del módulo y tipo de tarea de aquellas
+--tareas realizadas por colaboradores externos.
+select P.Nombre, M.Nombre, TT.Nombre from Proyectos p
+inner join Modulos M on M.IDProyecto = P.ID
+inner join Tareas T on T.IDModulo = M.ID
+inner join TiposTarea TT on TT.ID = T.IDTipo
+inner join Colaboraciones CO on CO.IDTarea = T.ID
+inner join Colaboradores C on C.ID = CO.IDColaborador
+where C.Tipo = 'e'
+
+--Listar nombre de proyectos que no hayan registrado tareas.
+select P.Nombre from Proyectos P
+inner join Modulos M on M.IDProyecto = P.ID
+left join Tareas T on T.IDModulo = M.ID
+where T.ID is null
+
+--Listar apellidos y nombres, sin repeticiones, de aquellos colaboradores que
+--hayan trabajado en algún proyecto que aún no haya finalizado.
+select distinct C.Apellido + ' ' + C.Nombre as 'Nombre y Apellido' from Colaboradores C
+inner join Colaboraciones CO on CO.IDColaborador = C.ID
+inner join Tareas T on T.ID = CO.IDTarea
+inner join Modulos M on M.ID = T.IDModulo
+inner join Proyectos P on p.ID = M.IDProyecto
+where P.FechaFin is null
