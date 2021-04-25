@@ -68,4 +68,38 @@ go
 
 --Por cada tipo de tarea, la cantidad de colaboradores distintos que la hayan
 --realizado. Indicar el tipo de tarea y la cantidad calculada.
+select T.Nombre, C.ID colaborador, COUNT(*) as CantColaboraciones from TiposTarea t
+inner join Tareas ta ON T.ID = Ta.IDTipo
+inner join Colaboraciones Col on col.IDTarea = Ta.ID
+inner join Colaboradores C on Col.IDColaborador = c.ID
+group by T.Nombre, C.ID
+
+go
+
+--Por cada módulo, la cantidad total de horas trabajadas. Indicar el ID, nombre
+--del módulo y la cantidad totalizada. Mostrar los módulos sin horas registradas
+--con 0.
+select M.ID, M.Nombre, COALESCE(sum(c.Tiempo), 0) Horas from Modulos M
+inner join Tareas T on T.IDModulo = M.ID
+inner join Colaboraciones C on C.IDTarea = T.ID
+group by M.ID, Nombre
+
+go
+
+--Por cada módulo y tipo de tarea, el promedio de horas trabajadas. Indicar el ID
+--y nombre del módulo, el nombre del tipo de tarea y el total calculado.
+select Ta.Nombre, avg(c.Tiempo) Horas from Modulos M
+inner join Tareas T on T.IDModulo = M.ID
+inner join TiposTarea Ta on Ta.ID = T.ID
+inner join Colaboraciones C on C.IDTarea = T.ID
+group by Ta.Nombre
+
+
+
+
+
+
+
+
+
 
