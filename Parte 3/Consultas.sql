@@ -167,11 +167,45 @@ select co.Tipo, avg(c.Tiempo * c.PrecioHora) from Colaboraciones c
 inner join Colaboradores co on co.ID = c.IDColaborador
 group by co.Tipo
 
+go
 
+--Listar el nombre del proyecto y el total neto estimado. Este último valor surge
+--del costo estimado menos los pagos que requiera hacer en concepto de
+--colaboraciones.
+select p.Nombre, p.CostoEstimado- isnull(sum(c.PrecioHora * c.Tiempo), 0) as 'Total estimado' from Proyectos p
+inner join Modulos m on m.IDProyecto = p.ID
+inner join Tareas t on t.IDModulo = m.ID
+inner join Colaboraciones c on c.IDTarea = t.ID
+group by p.Nombre, p.CostoEstimado
 
+go
 
+--Listar la cantidad de colaboradores distintos que hayan colaborado en alguna
+--tarea que correspondan a proyectos de clientes de tipo 'Unicornio'.
+select count(distinct c.ID) as 'Colaboradores' from Colaboradores c
+inner join Colaboraciones co on co.IDColaborador = c.ID
+inner join Tareas t on t.ID = co.IDTarea
+inner join Modulos m on m.ID = t.IDModulo
+inner join Proyectos p on p.ID = m.IDProyecto
+inner join Clientes cl on cl.ID = p.IDCliente
+inner join TiposCliente tc on tc.ID = cl.IDTipo
+where tc.Nombre = 'Unicornio'
 
+go
 
+--La cantidad de tareas realizadas por colaboradores del país 'Argentina'.
+select count(*) from Tareas t
+inner join Colaboraciones c on c.IDTarea = t.ID
+inner join Colaboradores co on co.ID = c.IDColaborador
+inner join Ciudades ci on ci.ID = co.IDCiudad
+inner join Paises p on p.ID = ci.IDPais
+where p.Nombre = 'Argentina'
+
+go
+
+--Por cada proyecto, la cantidad de módulos que se haya estimado mal la fecha
+--de fin. Es decir, que se haya finalizado antes o después que la fecha estimada.
+--Indicar el nombre del proyecto y la cantidad calculada.
 
 
 
