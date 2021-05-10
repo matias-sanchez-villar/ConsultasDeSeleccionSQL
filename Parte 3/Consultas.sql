@@ -206,11 +206,10 @@ go
 --Por cada proyecto, la cantidad de módulos que se haya estimado mal la fecha
 --de fin. Es decir, que se haya finalizado antes o después que la fecha estimada.
 --Indicar el nombre del proyecto y la cantidad calculada.
-
-
-
-
-
+select p.Nombre, count(m.ID) as 'Cantidad' from Proyectos p 
+inner join Modulos m on m.IDProyecto = p.ID
+where m.FechaEstimadaFin != m.FechaFin
+group by p.Nombre
 
 
 
