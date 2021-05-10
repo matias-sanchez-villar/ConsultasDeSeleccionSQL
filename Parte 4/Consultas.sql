@@ -226,25 +226,146 @@ go
 --cantidad de tareas de tipo 'Programación' que haya realizado.
 --NOTA: Se consideran tareas de tipo 'Testing' a las tareas que contengan la
 --palabra 'Testing' en su nombre. Ídem para Programación.
-select c.Apellido, c.Nombre, 
-	case
-		when c.Tipo 
+select c.Apellido, c.Nombre,
+	case 
+		when c.tipo
 			like 'I' then 'Interno'
 		else 'Externo'
 	end as 'Tipo',
-(
-	select count(*) from Colaboraciones co
-	inner join Tareas ta on ta.ID = co.IDTarea
-	inner join TiposTarea ti on ti.ID = ta.IDTipo
-	where co.IDColaborador = c.ID and ti.Nombre = '%Testing%'
-) as 'Tareas Testing',
-(
-	select count(*) from Colaboraciones co
-	inner join Tareas ta on ta.ID = co.IDTarea
-	inner join TiposTarea ti on ti.ID = ta.IDTipo
-	where co.IDColaborador = c.ID and ti.Nombre = '%Programación%'
-) as 'Tareas Programacion'
+	(
+		select count(*) from Colaboraciones co
+		inner join Tareas t on t.ID = co.IDTarea
+		inner join TiposTarea ti on ti.ID = t.IDTipo
+		where co.IDColaborador = c.ID and ti.Nombre like '%Testing%'
+	) as 'Tareas Testing',
+	(
+		select count(*) from Colaboraciones co
+		inner join Tareas t on t.ID = co.IDTarea
+		inner join TiposTarea ti on ti.ID = t.IDTipo
+		where co.IDColaborador = c.ID and ti.Nombre like '%Programación%'
+	) as 'Tareas Programador'
 from Colaboradores c
 
+go
 
+--Listado apellido y nombres de los colaboradores que no hayan realizado
+--tareas de 'Diseño de base de datos'.
+select c.Apellido, c.Nombre from Colaboradores c
+where c.ID not in
+	(
+		select distinct co.IDColaborador from Colaboraciones co
+		inner join Tareas t on t.ID = co.IDTarea
+		inner join TiposTarea ti on ti.ID = t.IDTipo
+		where ti.Nombre like '%Diseño de base de datos%' and co.IDColaborador = c.ID
+	)
 
+--Por cada país listar el nombre, la cantidad de clientes y la cantidad de
+--colaboradores.
+select p.Nombre, 
+(
+	select count(*) from Colaboradores c
+	inner join Ciudades ci on ci.ID = c.IDCiudad
+	where ci.IDPais = p.ID
+) as 'Cant Colaboradores',
+(
+	select count(*) from Clientes c
+	inner join Ciudades ci on ci.ID = c.IDCiudad
+	where ci.IDPais = p.ID
+) as 'Cant Clientes'
+from Paises p
+
+--Listar por cada país el nombre, la cantidad de clientes y la cantidad de
+--colaboradores de aquellos países que no tengan clientes pero sí
+--colaboradores.
+select Tabla.Nombre from
+(
+	select p.Nombre, 
+		(
+			select count(*) from Colaboradores c
+			inner join Ciudades ci on ci.ID = c.IDCiudad
+			where ci.IDPais = p.ID
+		) as CantColaboradores,
+		(
+			select count(*) from Clientes c
+			inner join Ciudades ci on ci.ID = c.IDCiudad
+			where ci.IDPais = p.ID
+		) as CantClientes
+	from Paises p
+) as Tabla
+where Tabla.CantClientes = 0 and Tabla.CantColaboradores > 0
+
+go
+
+--Listar apellidos y nombres de los colaboradores internos que hayan realizado
+--más tareas de tipo 'Testing' que tareas de tipo 'Programación'.
+select tab.Apellido, tab.Nombre from 
+(
+	select c.Apellido, c.Nombre,
+		(
+			select count(*) from Tareas t
+			inner join TiposTarea ti on ti.ID = t.IDTipo
+			inner join Colaboraciones co on co.IDTarea = t.ID
+			where co.IDColaborador = c.ID and ti.Nombre like '%Testing%'
+		) as TareasTesting,
+		(
+			select count(*) from Tareas t
+			inner join TiposTarea ti on ti.ID = t.IDTipo
+			inner join Colaboraciones co on co.IDTarea = t.ID
+			where co.IDColaborador = c.ID and ti.Nombre like '%Programación%'
+		) as TareasProgramacion
+	from Colaboradores c
+	where c.Tipo = 'I'
+) as Tab
+where tab.TareasTesting > tab.TareasProgramacion
+
+go
+
+--Listar los nombres de los tipos de tareas que hayan abonado más del
+--cuádruple (*4) en colaboradores internos que externos
+select tab.Nombre from
+(
+	select t.Nombre,
+	(
+		select sum(c.PrecioHora * c.Tiempo) from Colaboraciones c
+		inner join Colaboradores co on co.ID = c.IDColaborador
+		inner join Tareas ta on ta.ID = c.IDTarea
+		where ta.IDTipo = t.ID and co.Tipo = 'I'
+	) as CantInternos,
+	(
+		select sum(c.PrecioHora * c.Tiempo) from Colaboraciones c
+		inner join Colaboradores co on co.ID = c.IDColaborador
+		inner join Tareas ta on ta.ID = c.IDTarea
+		where ta.IDTipo = t.ID and co.Tipo = 'E'
+	) as CantExternos
+	from TiposTarea t
+) as tab
+where tab.CantInternos > tab.CantExternos *4
+
+--Listar los proyectos que hayan registrado 
+--igual cantidad de estimaciones demoradas que adelantadas
+--y que al menos hayan registrado alguna estimación adelantada
+--y que no hayan registrado ninguna estimación exacta.
+select * from Proyectos p
+where
+(
+	(
+		select count(distinct m.ID) from Modulos m
+		where m.IDProyecto = p.ID and m.FechaEstimadaFin > m.FechaFin
+	) 
+		=
+	(
+		select count(distinct m.ID) from Modulos m
+		where m.IDProyecto = p.ID and m.FechaEstimadaFin < m.FechaFin 
+	)
+		and
+	(
+		select count(distinct m.ID) from Modulos m
+		where m.IDProyecto = p.ID and m.FechaEstimadaFin < m.FechaFin 
+	) 
+		>0 and
+	(
+		select count(distinct m.ID) from Modulos m
+		where m.IDProyecto = p.ID and m.FechaEstimadaFin = m.FechaFin 
+	) 
+		= 0
+)
