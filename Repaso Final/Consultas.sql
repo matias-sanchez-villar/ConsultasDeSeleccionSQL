@@ -11,7 +11,7 @@ go
 
 --Por cada cliente, listar la razón social y el costo estimado del módulo más
 --costoso que haya solicitado.
-select c.RazonSocial, max(m.CostoEstimado) as 'Modulo Mas costoso' from Clientes c
+select top 1 c.RazonSocial, max(m.CostoEstimado) as 'Modulo Mas costoso' from Clientes c
 inner join Proyectos p on p.IDCliente = c.ID
 inner join Modulos m on m.IDProyecto = p.ID
 group by c.RazonSocial
