@@ -1,118 +1,118 @@
 use BluePrint
-GO
+go
 
 --La cantidad de colaboradores
-select count(*) as 'Cantidad de colaboradores' from Colaboradores
+select count(*) from Colaboradores
 
 go
 
---La cantidad de colaboradores nacidos entre 1990 y 2000.
-select COUNT(*) as 'Colaboradores nacidos 1990/2000' from Colaboradores
-where year(FechaNacimiento)>=1990 and year(FechaNacimiento)<=2000
+-- La cantidad de colaboradores nacidos entre 1990 y 2000.
+select count(*) from Colaboradores
+where year(FechaNacimiento) > 1990 and year(FechaNacimiento) < 2000
 
 go
 
 --El promedio de precio hora base de los tipos de tareas
-select avg(PrecioHoraBase) from TiposTarea
+select sum(PrecioHoraBase)/COUNT(PrecioHoraBase) from TiposTarea
 
 go
 
---El promedio de costo de los proyectos iniciados en el a駉 2019.
-select avg(CostoEstimado) as 'Promedio Costo' from Proyectos
+--El promedio de costo de los proyectos iniciados en el a帽o 2019.
+select avg(CostoEstimado) from Proyectos
 where year(FechaInicio) = 2019
 
 go
 
---El costo m醩 alto entre los proyectos de clientes de tipo 'Unicornio
-select top 1 p.Nombre, max(p.CostoEstimado) as 'Costo' from Proyectos p
+--El costo m谩s alto entre los proyectos de clientes de tipo 'Unicornio'
+select max(CostoEstimado) from Proyectos p
 inner join Clientes c on c.ID = p.IDCliente
 inner join TiposCliente tc on tc.ID = c.IDTipo
 where tc.Nombre = 'Unicornio'
-group by p.Nombre
 
 go
 
---El costo m醩 bajo entre los proyectos de clientes del pa韘 'Argentina'
-select top 1 p.Nombre, min(p.CostoEstimado) as 'Costo' from Proyectos p
+--El costo m谩s bajo entre los proyectos de clientes del pa铆s 'Argentina'
+select max(CostoEstimado) from Proyectos p
 inner join Clientes c on c.ID = p.IDCliente
 inner join Ciudades ci on ci.ID = c.IDCiudad
 inner join Paises pa on pa.ID = ci.IDPais
 where pa.Nombre = 'Argentina'
-group by p.Nombre
 
 go
 
 --La suma total de los costos estimados entre todos los proyectos.
-select sum(CostoEstimado) as total from Proyectos
+select sum(CostoEstimado) from Proyectos
 
 go
 
 --Por cada ciudad, listar el nombre de la ciudad y la cantidad de clientes.
-select Ciudades.Nombre, COUNT(Clientes.ID) Cantidad from Clientes
-inner join Ciudades on Ciudades.ID = Clientes.IDCiudad
-group by Ciudades.Nombre
+select c.Nombre, count(cl.IDCiudad) from Ciudades c
+inner join Clientes cl on cl.IDCiudad = c.ID
+group by c.Nombre
 
-GO
+go
 
---Por cada pa韘, listar el nombre del pa韘 y la cantidad de clientes.
-select Paises.Nombre, COUNT(Clientes.ID) as 'Cantidad Clientes' from Clientes
-inner join Ciudades on Ciudades.ID = Clientes.IDCiudad
-inner join Paises ON Paises.ID = Ciudades.IDPais
-group by Paises.Nombre
+--Por cada pa铆s, listar el nombre del pa铆s y la cantidad de clientes.
+select p.Nombre, count(cl.IDCiudad) from Paises p
+inner join Ciudades c on c.IDPais = p.ID
+inner join Clientes cl on cl.IDCiudad = c.ID
+group by p.Nombre
 
---Por cada tipo de tarea, la cantidad de colaboraciones registradas. Indicar el
+go
+
+-- Por cada tipo de tarea, la cantidad de colaboraciones registradas. Indicar el
 --tipo de tarea y la cantidad calculada.
-select t.Nombre, count(c.IDTarea) as Colaboraciones from TiposTarea t
-inner join Tareas ta on ta.ID = t.ID
+select tt.Nombre, count(c.IDTarea) from TiposTarea tt
+inner join Tareas t on t.IDTipo = tt.ID
 inner join Colaboraciones c on c.IDTarea = t.ID
-group by T.Nombre
+group by tt.Nombre
 
 go
 
 --Por cada tipo de tarea, la cantidad de colaboradores distintos que la hayan
 --realizado. Indicar el tipo de tarea y la cantidad calculada.
-select t.Nombre, count(distinct co.ID) as Cantidad from TiposTarea t
-inner join Tareas ta on ta.ID = t.ID
+select tt.Nombre, count(distinct c.IDTarea) from TiposTarea tt
+inner join Tareas t on t.IDTipo = tt.ID
 inner join Colaboraciones c on c.IDTarea = t.ID
-inner join Colaboradores co on co.ID = c.IDColaborador
-group by T.Nombre
+group by tt.Nombre
 
 go
 
---Por cada m骴ulo, la cantidad total de horas trabajadas. Indicar el ID, nombre
---del m骴ulo y la cantidad totalizada. Mostrar los m骴ulos sin horas registradas
+--Por cada m贸dulo, la cantidad total de horas trabajadas. Indicar el ID, nombre
+--del m贸dulo y la cantidad totalizada. Mostrar los m贸dulos sin horas registradas
 --con 0.
-select m.ID, m.Nombre, isnull(count(c.Tiempo), 0) as 'Cantidad Horas' from Modulos m
-left join Tareas t on t.IDModulo = m.ID
-left join Colaboraciones c on c.IDTarea = t.ID
+select m.ID, m.Nombre, sum(c.Tiempo) from Modulos m
+inner join Tareas t on t.IDModulo = m.ID
+inner join Colaboraciones c on c.IDTarea = t.ID
 group by m.ID, m.Nombre
 
 go
 
---Por cada m骴ulo y tipo de tarea, el promedio de horas trabajadas. Indicar el ID
---y nombre del m骴ulo, el nombre del tipo de tarea y el total calculado.
-select m.ID, m.Nombre, ti.Nombre, avg(c.Tiempo) as 'Promedio' from Modulos m
+--Por cada m贸dulo y tipo de tarea, el promedio de horas trabajadas. Indicar el ID
+--y nombre del m贸dulo, el nombre del tipo de tarea y el total calculado.
+select m.ID, m.Nombre, tt.Nombre, avg(c.Tiempo) from Modulos m
 inner join Tareas t on t.IDModulo = m.ID
-inner join TiposTarea ti on ti.ID = t.IDTipo
+inner join TiposTarea tt on tt.ID = t.IDTipo
 inner join Colaboraciones c on c.IDTarea = t.ID
-group by m.ID, m.Nombre, ti.Nombre
+group by m.ID, m.Nombre, tt.ID, tt.Nombre
 
 go
 
---Por cada m骴ulo, indicar su ID, apellido y nombre del colaborador y total que
---se le debe abonar en concepto de colaboraciones realizadas en dicho m骴ulo.
-select m.ID, co.Nombre, co.Apellido, sum(c.PrecioHora * c.Tiempo) as Precio from Modulos m
+--Por cada m贸dulo, indicar su ID, apellido y nombre del colaborador y total que
+--se le debe abonar en concepto de colaboraciones realizadas en dicho m贸dulo.
+select co.ID, co.Apellido, co.Nombre, sum(c.Tiempo) + SUM(c.PrecioHora) from Modulos m
 inner join Tareas t on t.IDModulo = m.ID
+inner join TiposTarea tt on tt.ID = t.IDTipo
 inner join Colaboraciones c on c.IDTarea = t.ID
 inner join Colaboradores co on co.ID = c.IDColaborador
-group by m.ID, co.Nombre, co.Apellido
+group by m.ID, co.ID, co.Apellido, co.Nombre
 
 go
 
 --Por cada proyecto indicar el nombre del proyecto y la cantidad de horas
 --registradas en concepto de colaboraciones y el total que debe abonar en
 --concepto de colaboraciones.
-select p.Nombre, sum(c.Tiempo) Horas, sum(c.PrecioHora * c.Tiempo) Precio from Proyectos p
+select p.Nombre, sum(c.Tiempo), sum(c.PrecioHora * c.Tiempo) from Proyectos p
 inner join Modulos m on m.IDProyecto = p.ID
 inner join Tareas t on t.IDModulo = m.ID
 inner join Colaboraciones c on c.IDTarea = t.ID
@@ -121,70 +121,70 @@ group by p.Nombre
 go
 
 --Listar los nombres de los proyectos que hayan registrado menos de cinco
---colaboradores distintos y m醩 de 100 horas total de trabajo.
+--colaboradores distintos y m谩s de 100 horas total de trabajo
 select distinct p.Nombre from Proyectos p
 inner join Modulos m on m.IDProyecto = p.ID
 inner join Tareas t on t.IDModulo = m.ID
 inner join Colaboraciones c on c.IDTarea = t.ID
 inner join Colaboradores co on co.ID = c.IDColaborador
-group by p.Nombre, co.Nombre
-having count(distinct co.Nombre) < 5 and sum(c.Tiempo) > 100
+group by p.Nombre, co.ID
+having sum(c.Tiempo) > 100 and count(distinct co.ID) < 5 
 
 go
 
---Listar los nombres de los proyectos que hayan comenzado en el a駉 2020 que
---hayan registrado m醩 de tres m骴ulos.
+--Listar los nombres de los proyectos que hayan comenzado en el a帽o 2020 que
+--hayan registrado m谩s de tres m贸dulos.
 select distinct p.Nombre from Proyectos p
 inner join Modulos m on m.IDProyecto = p.ID
-where year(p.FechaInicio) = 2020
+where year(m.FechaFin) = 2020
 group by p.Nombre
-having count(m.IDProyecto) > 3
+having count(m.ID) > 3
 
 go
 
 --Listar para cada colaborador externo, el apellido y nombres y el tiempo
---m醲imo de horas que ha trabajo en una colaboraci髇
-select c.Nombre, c.Apellido, max(co.Tiempo) as tiempo from Colaboradores c
-inner join Colaboraciones co on co.IDColaborador = c.ID
+--m谩ximo de horas que ha trabajo en una colaboraci贸n.
+select c.Apellido, c.Nombre, max(cc.Tiempo) from Colaboradores c
+inner join Colaboraciones cc on cc.IDColaborador = c.ID
 where c.Tipo = 'E'
-group by c.Nombre, c.Apellido
+group by c.ID, c.Apellido, c.Nombre
 
 go
 
 --Listar para cada colaborador interno, el apellido y nombres y el promedio
 --percibido en concepto de colaboraciones.
-select c.Nombre, c.Apellido, avg(co.Tiempo * co.PrecioHora) promedio from Colaboradores c
-inner join Colaboraciones co on co.IDColaborador = c.ID
+select c.Apellido, c.Nombre, avg(cc.Tiempo * cc.PrecioHora) from Colaboradores c
+inner join Colaboraciones cc on cc.IDColaborador = c.ID
 where c.Tipo = 'I'
-group by c.Nombre, c.Apellido
+group by c.ID, c.Apellido, c.Nombre
 
 go
 
 --Listar el promedio percibido en concepto de colaboraciones para
 --colaboradores internos y el promedio percibido en concepto de
 --colaboraciones para colaboradores externos.
-select co.Tipo, avg(c.Tiempo * c.PrecioHora) from Colaboraciones c
-inner join Colaboradores co on co.ID = c.IDColaborador
-group by co.Tipo
+select c.Tipo, avg(cc.Tiempo * cc.PrecioHora) from Colaboraciones cc
+inner join Colaboradores c on c.ID = cc.IDColaborador
+group by c.Tipo
 
 go
 
---Listar el nombre del proyecto y el total neto estimado. Este 鷏timo valor surge
+--Listar el nombre del proyecto y el total neto estimado. Este 煤ltimo valor surge
 --del costo estimado menos los pagos que requiera hacer en concepto de
 --colaboraciones.
-select p.Nombre, p.CostoEstimado- isnull(sum(c.PrecioHora * c.Tiempo), 0) as 'Total estimado' from Proyectos p
+select p.Nombre, p.CostoEstimado - sum(cc.PrecioHora * cc.Tiempo) from Proyectos p
 inner join Modulos m on m.IDProyecto = p.ID
 inner join Tareas t on t.IDModulo = m.ID
-inner join Colaboraciones c on c.IDTarea = t.ID
+inner join Colaboraciones cc on cc.IDTarea = t.ID
 group by p.Nombre, p.CostoEstimado
 
 go
 
 --Listar la cantidad de colaboradores distintos que hayan colaborado en alguna
 --tarea que correspondan a proyectos de clientes de tipo 'Unicornio'.
-select count(distinct c.ID) as 'Colaboradores' from Colaboradores c
-inner join Colaboraciones co on co.IDColaborador = c.ID
-inner join Tareas t on t.ID = co.IDTarea
+select count(distinct c.ID) from Colaboradores c
+inner join Colaboraciones cc on cc.IDColaborador = c.ID
+inner join Tareas t on t.ID = cc.IDTarea
 inner join Modulos m on m.ID = t.IDModulo
 inner join Proyectos p on p.ID = m.IDProyecto
 inner join Clientes cl on cl.ID = p.IDCliente
@@ -193,24 +193,20 @@ where tc.Nombre = 'Unicornio'
 
 go
 
---La cantidad de tareas realizadas por colaboradores del pa韘 'Argentina'.
-select count(*) from Tareas t
-inner join Colaboraciones c on c.IDTarea = t.ID
-inner join Colaboradores co on co.ID = c.IDColaborador
-inner join Ciudades ci on ci.ID = co.IDCiudad
+--La cantidad de tareas realizadas por colaboradores del pa铆s 'Argentina'.
+select count(t.ID) from Tareas t
+inner join Colaboraciones cc on cc.IDTarea = t.ID
+inner join Colaboradores c on c.ID = cc.IDColaborador
+inner join Ciudades ci on ci.ID = c.IDCiudad
 inner join Paises p on p.ID = ci.IDPais
 where p.Nombre = 'Argentina'
 
 go
 
---Por cada proyecto, la cantidad de m骴ulos que se haya estimado mal la fecha
---de fin. Es decir, que se haya finalizado antes o despu閟 que la fecha estimada.
---Indicar el nombre del proyecto y la cantidad calculada.
-select p.Nombre, count(m.ID) as 'Cantidad' from Proyectos p 
+--Por cada proyecto, la cantidad de m贸dulos que se haya estimado mal la fecha
+--de fin. Es decir, que se haya finalizado antes o despu茅s que la fecha estimada.
+--Indicar el nombre del proyecto y la cantidad calculada
+select p.Nombre, count(m.ID) from Proyectos p
 inner join Modulos m on m.IDProyecto = p.ID
-where m.FechaEstimadaFin != m.FechaFin
-group by p.Nombre
-
-
-
-
+where m.FechaFin != m.FechaEstimadaFin
+group by p.ID, p.Nombre
